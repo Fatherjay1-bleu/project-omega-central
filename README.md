@@ -7,7 +7,7 @@ SentinelOps AI is a synthetic cybersecurity demonstration combining **Python/Fla
 
 ## Live demonstration (read-only public container)
 
-The Docker-based public demo runs Gunicorn and compiles its native C/C++ engines during its Linux build. It accepts no user-supplied event data; POST requests are rejected with HTTP 405. After Railway (or another Docker host) provides a verified HTTPS domain:
+The Docker-based public demo runs Gunicorn and compiles its native C/C++ engines during its Linux build. It accepts no user-supplied event data; POST requests are rejected with HTTP 405. **Live Railway deployment:** https://project-omega-central-production.up.railway.app\n\nVerified public demonstration routes:
 
 - `/` — dashboard of packaged synthetic events
 - `/demo` — three-scenario index (JSON)
