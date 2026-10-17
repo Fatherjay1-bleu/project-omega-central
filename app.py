@@ -10,6 +10,15 @@ def engine_error(error):
     return jsonify(error=str(error)), 503
 
 
+@app.after_request
+def security_headers(response):
+    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
 @app.get("/")
 def dashboard():
     events = analyze_fixtures()

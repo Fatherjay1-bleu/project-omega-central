@@ -77,6 +77,17 @@ class OrchestrationTests(unittest.TestCase):
         self.assertEqual([item["risk"] for item in analyze_fixtures()],
                          ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
 
+    def test_corrupt_fixture_json(self):
+        with patch("sentinel.orchestrator.Path.read_text", return_value="not json"):
+            with self.assertRaises(EngineError):
+                analyze_fixtures()
+
+    def test_invalid_fixture_event(self):
+        bad = '[{"id":"X","source":"Y","severity":99,"failed_logins":0,"suspicious_process":false}]'
+        with patch("sentinel.orchestrator.Path.read_text", return_value=bad):
+            with self.assertRaises(EngineError):
+                analyze_fixtures()
+
 
 class DashboardTests(unittest.TestCase):
     def setUp(self):
@@ -105,6 +116,22 @@ class DashboardTests(unittest.TestCase):
             response = self.client.get("/")
             self.assertIn(b"&lt;script&gt;", response.data)
             self.assertNotIn(b"<script>", response.data)
+
+    def test_security_headers(self):
+        for path in ("/", "/api/events"):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.headers.get("Content-Security-Policy"), "default-src 'self'")
+                self.assertEqual(response.headers.get("X-Content-Type-Options"), "nosniff")
+                self.assertEqual(response.headers.get("X-Frame-Options"), "DENY")
+                self.assertEqual(response.headers.get("Referrer-Policy"), "no-referrer")
+
+    def test_security_headers_on_error_response(self):
+        with patch("app.analyze_fixtures", side_effect=EngineError("Build required")):
+            response = self.client.get("/")
+            self.assertEqual(response.status_code, 503)
+            self.assertIn("Content-Security-Policy", response.headers)
+            self.assertIn("X-Content-Type-Options", response.headers)
 
 
 if __name__ == "__main__":

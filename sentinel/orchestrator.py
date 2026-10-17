@@ -55,5 +55,8 @@ def analyze_event(event):
 
 
 def analyze_fixtures():
-    events = json.loads((ROOT / "data" / "events.json").read_text(encoding="utf-8"))
-    return [analyze_event(event) for event in events]
+    try:
+        events = json.loads((ROOT / "data" / "events.json").read_text(encoding="utf-8"))
+        return [analyze_event(event) for event in events]
+    except (json.JSONDecodeError, InvalidEvent) as exc:
+        raise EngineError("Fixture data is unavailable.") from exc
