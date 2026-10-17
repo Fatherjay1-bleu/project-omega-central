@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SentinelOps AI · Event analysis</title>
+  <style>
+    body{font:16px system-ui,sans-serif;background:#101827;color:#e7eef9;margin:0;padding:5vw}
+    main{max-width:1100px;margin:auto}h1{margin-bottom:8px}p{color:#b6c6dd}
+    .panel{overflow-x:auto;border:1px solid #35445d;border-radius:12px;margin-top:30px}
+    table{border-collapse:collapse;width:100%;text-align:left}th,td{padding:18px;border-bottom:1px solid #35445d}
+    th{color:#b6c6dd}.LOW{color:#81dfa8}.MEDIUM{color:#ffda80}.HIGH{color:#ffad75}.CRITICAL{color:#ff8798}
+    a{color:#95c8ff}footer{margin-top:24px;color:#b6c6dd}
+  </style>
+</head>
+<body><main>
+  <p>PROJECT OMEGA CENTRAL</p>
+  <h1>SentinelOps AI</h1>
+  <p>Synthetic security event analysis · C validation · C++ threat scoring</p>
+  <div class="panel"><table>
+    <thead><tr><th scope="col">Event</th><th scope="col">Source</th><th scope="col">Severity</th><th scope="col">Failed logins</th><th scope="col">Suspicious process</th><th scope="col">Score</th><th scope="col">Risk</th></tr></thead>
+    <tbody>{% for event in events %}<tr>
+      <td>{{ event.id }}</td><td>{{ event.source }}</td><td>{{ event.severity }}</td>
+      <td>{{ event.failed_logins }}</td><td>{{ 'Yes' if event.suspicious_process else 'No' }}</td>
+      <td>{{ event.score }}/100</td><td class="{{ event.risk }}">{{ event.risk }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  <footer>{{ events|length }} synthetic events · <a href="/api/events">View JSON</a> · Reload to reanalyze</footer>
+</main></body></html>

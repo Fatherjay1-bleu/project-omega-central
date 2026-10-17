@@ -1,0 +1,6 @@
+[
+  {"id":"SYN-001","source":"demo-workstation","severity":1,"failed_logins":0,"suspicious_process":false},
+  {"id":"SYN-002","source":"demo-auth-server","severity":4,"failed_logins":3,"suspicious_process":false},
+  {"id":"SYN-003","source":"demo-endpoint","severity":7,"failed_logins":0,"suspicious_process":true},
+  {"id":"SYN-004","source":"demo-gateway","severity":10,"failed_logins":12,"suspicious_process":true}
+]
