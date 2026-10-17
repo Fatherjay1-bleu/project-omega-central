@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+*.pyo
+build
+tests
+scripts
+*.zip
+*.pdf
+*.pptx
+*.md
+!requirements.txt
+.env
+.env.*
