@@ -7,7 +7,7 @@ No externally supplied events are accepted or recorded.
 import json
 from pathlib import Path
 
-from flask import jsonify, request
+from flask import jsonify, render_template, request
 from werkzeug.exceptions import MethodNotAllowed
 
 from app import app as application, _build_report
@@ -59,3 +59,12 @@ def demo_scenario(number):
         error_count=len(batch.errors),
         errors=batch.errors,
     )
+
+
+# Reuse the app's existing '/' route while presenting the interactive console
+# only in the public demo. Local development routes and unit tests stay intact.
+def interactive_console():
+    return render_template("console.html")
+
+
+application.view_functions["dashboard"] = interactive_console

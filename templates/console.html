@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SentinelOps AI — interactive cybersecurity event analysis with explainable C/C++ scoring and synthetic threat scenarios.">
+  <title>SentinelOps AI | Security Operations Console</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='console.css') }}">
+  <script src="{{ url_for('static', filename='console.js') }}" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a href="/" class="brand"><span class="brand-mark" aria-hidden="true">⬡</span><span><strong>SENTINEL<span class="accent">OPS</span></strong><small>PROJECT OMEGA CENTRAL</small></span></a>
+      <div class="side-label">WORKSPACE</div>
+      <a href="#overview" class="nav-item active"><span aria-hidden="true">▦</span> Overview</a>
+      <a href="#events" class="nav-item"><span aria-hidden="true">≡</span> Event explorer</a>
+      <a href="#findings" class="nav-item"><span aria-hidden="true">◎</span> Detection findings</a>
+      <div class="side-label side-gap">DEMO ENVIRONMENT</div>
+      <button type="button" class="scenario-nav selected" data-scenario="1"><span class="scenario-number">01</span><span>Normal activity</span></button>
+      <button type="button" class="scenario-nav" data-scenario="2"><span class="scenario-number">02</span><span>Authentication incident</span></button>
+      <button type="button" class="scenario-nav" data-scenario="3"><span class="scenario-number">03</span><span>Critical threat cluster</span></button>
+      <div class="side-bottom"><span class="live-dot"></span> DEMO SYSTEM ONLINE <p>Read-only • synthetic events</p><a href="https://github.com/Fatherjay1-bleu/project-omega-central" target="_blank" rel="noopener noreferrer">View source code ↗</a></div>
+    </aside>
+    <div class="content">
+      <header class="topbar"><div class="breadcrumbs">Security Operations <span>/</span> Live Demo Console</div><div class="top-controls"><span class="environment"><span class="live-dot"></span> DEMO ONLINE</span><span class="avatar">Ω</span></div></header>
+      <main>
+        <section id="overview" class="hero">
+          <div class="eyebrow"><span class="eyebrow-line"></span> SECURITY INTELLIGENCE PLATFORM <span class="version">v3.0</span></div>
+          <div class="hero-top"><div><h1>Threat detection.<br><span class="heading-muted">Made explainable.</span></h1><p class="subtitle">A real working cybersecurity analysis engine powered by native C validation, C++ risk scoring, and Python correlation rules.</p></div><div class="engine-card"><div class="engine-icon">◎</div><div><strong>Analysis Engine</strong><small>OPERATIONAL</small></div><span class="engine-pulse"></span></div></div>
+        </section>
+        <section class="scenario-section" aria-labelledby="scenario-title">
+          <div class="section-top"><div><div class="mini-label">SIMULATION CONTROL</div><h2 id="scenario-title">Choose a threat scenario</h2></div><p>Explore real engine output with preloaded synthetic events.</p></div>
+          <div class="scenario-grid">
+            <button type="button" class="scenario-card is-active" data-scenario="1"><span class="scenario-head"><span class="scenario-pill safe">LOW RISK</span><span>01 / 03</span></span><span class="scenario-icon">◈</span><strong>Normal Activity</strong><small>Healthy workstation behavior with minimal risk indicators.</small><span class="scenario-action">Analyze scenario <span>↗</span></span></button>
+            <button type="button" class="scenario-card" data-scenario="2"><span class="scenario-head"><span class="scenario-pill medium">ELEVATED</span><span>02 / 03</span></span><span class="scenario-icon amber">⌘</span><strong>Authentication Incident</strong><small>Repeated login failures across multiple authentication servers.</small><span class="scenario-action">Analyze scenario <span>↗</span></span></button>
+            <button type="button" class="scenario-card" data-scenario="3"><span class="scenario-head"><span class="scenario-pill danger">CRITICAL</span><span>03 / 03</span></span><span class="scenario-icon red">⚡</span><strong>Threat Cluster</strong><small>Severe events, suspicious processes, and cross-source correlation.</small><span class="scenario-action">Analyze scenario <span>↗</span></span></button>
+          </div>
+        </section>
+        <section class="results" aria-live="polite"><div class="results-header"><div><div class="mini-label">LIVE ANALYSIS OUTPUT</div><h2 id="active-title">Normal Activity <span class="result-marker">/ Scenario 01</span></h2><p id="active-description">Loading verified synthetic scenario…</p></div><div class="result-actions"><span id="request-state" class="request-state">CONNECTING</span><button type="button" id="refresh" class="subtle-button">↻ Re-run analysis</button></div></div>
+          <div id="error" class="error-banner" role="alert" hidden>Could not load the scenario. Please retry.</div>
+          <div class="metrics">
+            <div class="metric"><span>TOTAL EVENTS</span><strong id="total">—</strong><small>Processed by native engines</small></div>
+            <div class="metric"><span>CRITICAL THREATS</span><strong id="critical" class="danger-text">—</strong><small>Score of 80 or above</small></div>
+            <div class="metric"><span>DETECTION FINDINGS</span><strong id="finding-count">—</strong><small>Correlation rule matches</small></div>
+            <div class="metric"><span>SUCCESS RATE</span><strong id="success">—</strong><small>Valid analyzed events</small></div>
+          </div>
+          <div class="data-split"><section class="surface risk-surface" aria-labelledby="risk-title"><div class="surface-title"><div><div class="mini-label">RISK ASSESSMENT</div><h3 id="risk-title">Event distribution</h3></div><span class="legend-note">0–100 threat score</span></div><div class="risk-rows" id="risk-bars"><div class="placeholder">Loading distribution…</div></div></section>
+            <section class="surface health-surface"><div class="surface-title"><div><div class="mini-label">ENGINE STATUS</div><h3>Processing pipeline</h3></div><span class="status-good">● HEALTHY</span></div><div class="pipeline"><div><span class="step-icon">01</span><span><strong>Schema verification</strong><small>Native C validator</small></span><span class="step-ok">✓</span></div><div><span class="step-icon">02</span><span><strong>Threat scoring</strong><small>Native C++ risk engine</small></span><span class="step-ok">✓</span></div><div><span class="step-icon">03</span><span><strong>Threat correlation</strong><small>Python • 6 detection rule types</small></span><span class="step-ok">✓</span></div></div></section></div>
+          <section id="events" class="surface events-surface"><div class="surface-title"><div><div class="mini-label">INVESTIGATION WORKSPACE</div><h3>Analyzed events <span class="inline-count" id="event-count">0</span></h3></div><div class="tools"><label class="search-wrap"><span>⌕</span><span class="sr-only">Filter events</span><input type="search" id="filter" placeholder="Search event or source…"></label><button type="button" class="subtle-button" id="export">↓ Export JSON</button></div></div><div class="table-scroll"><table><thead><tr><th>EVENT ID</th><th>SOURCE</th><th>SEVERITY</th><th>FAILED LOGINS</th><th>RISK SCORE</th><th>CLASSIFICATION</th><th>DETAILS</th></tr></thead><tbody id="event-rows"><tr><td colspan="7">Loading events…</td></tr></tbody></table></div><div class="table-foot">Select “Explain score” to inspect deterministic score contributions.</div></section>
+          <section id="findings" class="surface findings-surface"><div class="surface-title"><div><div class="mini-label">CORRELATION ENGINE</div><h3>Detection findings <span class="inline-count" id="findings-count">0</span></h3></div><span class="six-rules">6 RULE TYPES ACTIVE</span></div><div class="findings-list" id="finding-rows"><div class="placeholder">Loading findings…</div></div></section>
+          <p class="disclaimer"><strong>Demonstration environment:</strong> All events are synthetic. Scoring is a deterministic, explainable heuristic—not a trained AI model or production threat-detection service. Public app is read-only and does not accept uploaded telemetry.</p>
+        </section>
+      </main>
+      <footer class="footer"><span>© 2026 SENTINELOPS AI · PROJECT OMEGA CENTRAL</span><span>BUILT WITH PYTHON, C, C++ & IBM BOB DEVELOPMENT ASSISTANCE</span></footer>
+    </div>
+  </div>
+</body>
+</html>

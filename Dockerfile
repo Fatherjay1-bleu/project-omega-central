@@ -16,6 +16,7 @@ COPY app.py public_demo.py ./
 COPY sentinel/ ./sentinel/
 COPY data/ ./data/
 COPY templates/ ./templates/
+COPY static/ ./static/
 COPY --from=native-build /app/build/ ./build/
 RUN useradd --create-home --uid 10001 demo && chown -R demo:demo /app
 USER demo
