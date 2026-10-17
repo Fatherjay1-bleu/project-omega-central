@@ -1,0 +1,5 @@
+[
+  {"id":"DEMO-S1-001","source":"workstation-alpha","severity":0,"failed_logins":0,"suspicious_process":false},
+  {"id":"DEMO-S1-002","source":"workstation-beta", "severity":1,"failed_logins":1,"suspicious_process":false},
+  {"id":"DEMO-S1-003","source":"workstation-gamma","severity":2,"failed_logins":0,"suspicious_process":false}
+]

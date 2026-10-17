@@ -1,0 +1,5 @@
+[
+  {"id":"DEMO-S3-001","source":"gateway-north","severity":9, "failed_logins":15,"suspicious_process":true},
+  {"id":"DEMO-S3-002","source":"gateway-south","severity":10,"failed_logins":12,"suspicious_process":true},
+  {"id":"DEMO-S3-003","source":"endpoint-core","severity":8, "failed_logins":0, "suspicious_process":true}
+]

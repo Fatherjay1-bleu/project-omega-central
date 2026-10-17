@@ -1,0 +1,5 @@
+[
+  {"id":"DEMO-S2-001","source":"auth-server-01","severity":3,"failed_logins":5, "suspicious_process":false},
+  {"id":"DEMO-S2-002","source":"auth-server-02","severity":4,"failed_logins":10,"suspicious_process":false},
+  {"id":"DEMO-S2-003","source":"auth-server-03","severity":5,"failed_logins":12,"suspicious_process":false}
+]

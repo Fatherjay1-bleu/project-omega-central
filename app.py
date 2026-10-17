@@ -1,15 +1,27 @@
 """Loopback-only demonstration dashboard; all displayed events are synthetic."""
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 from sentinel.correlator import correlate
 from sentinel.explainer import explain_score
+from sentinel.ingestor import IngestionError, MAX_CONTENT_LENGTH, ingest_and_analyze
 from sentinel.orchestrator import EngineError, analyze_fixtures
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 
 
 @app.errorhandler(EngineError)
 def engine_error(error):
     return jsonify(error=str(error)), 503
+
+
+@app.errorhandler(IngestionError)
+def ingestion_error(error):
+    return jsonify(error=str(error)), error.http_status
+
+
+@app.errorhandler(413)
+def request_too_large(_error):
+    return jsonify(error="Request body too large."), 413
 
 
 @app.after_request
@@ -57,6 +69,35 @@ def events_api():
 def v2_report():
     scored = analyze_fixtures()
     return jsonify(_build_report(scored))
+
+
+@app.post("/api/v3/analyze")
+def v3_analyze():
+    body = request.get_json(force=False, silent=True)
+    origin         = request.headers.get("Origin")
+    sec_fetch_site = request.headers.get("Sec-Fetch-Site")
+    batch = ingest_and_analyze(body, origin, sec_fetch_site)
+    scored = batch.scored
+    if scored:
+        report = _build_report(scored)
+    else:
+        report = {
+            "synthetic":         True,
+            "total_events":      0,
+            "risk_distribution": {"LOW": 0, "MEDIUM": 0, "HIGH": 0, "CRITICAL": 0},
+            "events":            [],
+            "correlations":      [],
+        }
+    return jsonify(
+        synthetic      = report["synthetic"],
+        total_events   = report["total_events"],
+        risk_distribution = report["risk_distribution"],
+        events         = report["events"],
+        correlations   = report["correlations"],
+        success_count  = len(batch.scored),
+        error_count    = len(batch.errors),
+        errors         = batch.errors,
+    ), 200
 
 
 if __name__ == "__main__":

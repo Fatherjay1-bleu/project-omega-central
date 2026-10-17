@@ -14,6 +14,8 @@ _HIGH_RISK_LEVELS         = {"HIGH", "CRITICAL"}
 _LOGIN_STORM_THRESHOLD    = 10     # CORR-001: single-event failed_logins >= this
 _CLUSTER_MIN_COUNT        = 2      # CORR-002/003: minimum matching events
 _ELEVATED_BATCH_FRACTION  = 0.5   # CORR-004: >= 50 % of events HIGH or CRITICAL
+_HIGH_SEVERITY_THRESHOLD  = 7     # CORR-005: all events severity >= this
+_MAX_POSSIBLE_SCORE       = 100   # CORR-006: score equals formula ceiling
 
 
 @dataclass
@@ -48,6 +50,8 @@ def correlate(scored_events):
     findings.extend(_rule_process_cluster(scored_events))
     findings.extend(_rule_multi_source_critical(scored_events))
     findings.extend(_rule_elevated_batch_risk(scored_events))
+    findings.extend(_rule_all_high_severity(scored_events))
+    findings.extend(_rule_max_score_reached(scored_events))
     return findings
 
 
@@ -129,3 +133,46 @@ def _rule_elevated_batch_risk(events):
             event_ids=[ev["id"] for ev in high_or_critical],
         )]
     return []
+
+
+# ---------------------------------------------------------------------------
+# CORR-005: Every event in the batch has severity >= threshold
+# ---------------------------------------------------------------------------
+
+def _rule_all_high_severity(events):
+    high_sev = [ev for ev in events if ev["severity"] >= _HIGH_SEVERITY_THRESHOLD]
+    if len(high_sev) == len(events):
+        return [Finding(
+            rule_id="CORR-005",
+            finding_type="ALL_SOURCES_HIGH_SEVERITY",
+            description=(
+                f"All {len(events)} event(s) in the batch report severity "
+                f"{_HIGH_SEVERITY_THRESHOLD} or higher."
+            ),
+            event_ids=[ev["id"] for ev in high_sev],
+        )]
+    return []
+
+
+# ---------------------------------------------------------------------------
+# CORR-006: An event reached the formula ceiling score of 100
+#
+# Note: a score of 100 means the formula result reached or exceeded the cap.
+# It does not imply any specific combination of input fields caused this —
+# multiple input combinations can produce a raw total >= 100.
+# ---------------------------------------------------------------------------
+
+def _rule_max_score_reached(events):
+    findings = []
+    for ev in events:
+        if ev["score"] == _MAX_POSSIBLE_SCORE:
+            findings.append(Finding(
+                rule_id="CORR-006",
+                finding_type="MAX_SCORE_REACHED",
+                description=(
+                    f"Event {ev['id']} received the maximum risk score of "
+                    f"{_MAX_POSSIBLE_SCORE}, the formula ceiling."
+                ),
+                event_ids=[ev["id"]],
+            ))
+    return findings
