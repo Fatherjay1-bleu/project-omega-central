@@ -1,0 +1,66 @@
+name: Public Docker demo build and smoke test
+on:
+  push:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "public_demo.py"
+      - "native/**"
+      - "sentinel/**"
+      - "app.py"
+      - "templates/**"
+      - "data/**"
+      - "requirements.txt"
+      - ".github/workflows/public-demo.yml"
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  docker-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Linux container with C/C++ engines
+        run: docker build --tag sentinelops-hackathon-demo .
+      - name: Start public read-only service
+        run: |
+          docker run -d --name omega-demo -p 18080:8080 sentinelops-hackathon-demo
+      - name: Verify dashboard, scenario data, and read-only HTTP behavior
+        run: |
+          python3 - <<'PY'
+          import json, time, urllib.request, urllib.error
+          base = "http://127.0.0.1:18080"
+          for attempt in range(30):
+              try:
+                  with urllib.request.urlopen(base + "/", timeout=5) as response:
+                      assert response.status == 200
+                  break
+              except Exception:
+                  time.sleep(2)
+          else:
+              raise SystemExit("Dashboard never became ready")
+          with urllib.request.urlopen(base + "/demo") as response:
+              info = json.load(response)
+          assert len(info["scenarios"]) == 3
+          expected = {1: set(), 2: {"CORR-001"}, 3: {f"CORR-{i:03}" for i in range(1, 7)}}
+          for number, required_rules in expected.items():
+              with urllib.request.urlopen(f"{base}/demo/scenario/{number}") as response:
+                  result = json.load(response)
+              assert result["synthetic"] is True
+              assert result["error_count"] == 0
+              rules = {finding["rule_id"] for finding in result["correlations"]}
+              assert required_rules.issubset(rules), (number, rules)
+              if number == 1:
+                  assert not rules
+          req = urllib.request.Request(base + "/api/v3/analyze", data=b'{"events":[]}', headers={"Content-Type":"application/json"}, method="POST")
+          try:
+              urllib.request.urlopen(req, timeout=5)
+              raise AssertionError("POST unexpectedly succeeded")
+          except urllib.error.HTTPError as err:
+              assert err.code == 405, err.code
+          print("Public read-only Docker smoke checks passed")
+          PY
+      - name: Container logs
+        if: failure()
+        run: docker logs omega-demo
