@@ -1,88 +1,110 @@
 # Project Omega Central — SentinelOps AI
 
-A local Windows cybersecurity event analysis prototype using **synthetic events**.
-Python/Flask orchestrates a compiled C validator and C++ risk scorer. No production
-telemetry, credentials, external APIs, or active AI model integrations are used.
+**Explainable cybersecurity event scoring and correlation, developed with IBM Bob.**
+**Hackathon track:** Students / Early Career — Explore, Fix, and Build.
 
-## Windows setup
+SentinelOps AI is a synthetic cybersecurity demonstration combining **Python/Flask**, a compiled **C validation engine**, and a compiled **C++ risk scorer**. Python provides event validation, batch orchestration, transparent score contributions, and six deterministic correlation rules. **The scoring engine is not a trained AI model.** IBM Bob was used as a development assistant. Gemini inference is not integrated.
 
-Prerequisites: Windows 10/11, PowerShell 5.1+, Python 3.10+ with pip/venv,
-GCC/G++ with C11/C++17 support (for example a MinGW-w64 UCRT toolchain), and Git
-for version control. Installation and downloads require the workspace owner's
-approval. Scripts never install compilers or alter system settings.
+## Live demonstration (read-only public container)
 
-From the repository root in PowerShell:
+The Docker-based public demo runs Gunicorn and compiles its native C/C++ engines during its Linux build. It accepts no user-supplied event data; POST requests are rejected with HTTP 405. After Railway (or another Docker host) provides a verified HTTPS domain:
+
+- `/` — dashboard of packaged synthetic events
+- `/demo` — three-scenario index (JSON)
+- `/demo/scenario/1` — normal low-risk activity
+- `/demo/scenario/2` — authentication incident
+- `/demo/scenario/3` — critical cluster exercising all six correlation-rule types
+
+See [PUBLIC_DEPLOYMENT.md](PUBLIC_DEPLOYMENT.md) for the hosting procedure, Docker smoke-test instructions, security notes, and URL checks. **Do not submit a localhost or GitHub URL as a live deployed application.**
+
+## Windows development setup
+
+Requirements: Windows 10/11, PowerShell, Git, Python 3.10+, GCC/G++ with C11/C++17 support (MSYS2 UCRT64 is verified).
 
 ```powershell
-# Uses an existing Python interpreter. Explicit path is supported.
-.\scripts\setup.ps1 -PythonPath 'C:\path\to\python.exe'
-# If Flask is absent, approve the download before using this flag:
-.\scripts\setup.ps1 -PythonPath 'C:\path\to\python.exe' -AllowNetwork
+git clone https://github.com/Fatherjay1-bleu/project-omega-central.git
+cd project-omega-central
+$env:Path = "C:\msys64\ucrt64\bin;$env:Path"
+.\scripts\setup.ps1
+# If Flask is absent and downloads are approved:
+# .\scripts\setup.ps1 -AllowNetwork
 .\scripts\build.ps1
 .\scripts\test.ps1
 .\scripts\run.ps1
 ```
 
-With Python on PATH, omit `-PythonPath`. An activated environment is unnecessary.
-For compilers outside PATH:
+Open http://127.0.0.1:5000 locally. This uses Flask's **development server** bound to loopback, not public hosting. Use Ctrl+C to stop.
 
-```powershell
-.\scripts\build.ps1 -Gcc 'C:\path\to\gcc.exe' -Gxx 'C:\path\to\g++.exe'
+## Architecture and score
+
+```text
+Synthetic fixtures / local JSON POST
+             |
+      Python / Flask
+             |
+   Schema and batch validation
+             |
+      C native validator
+             |
+      C++ native scorer
+             |
+      Python explanations
+       + 6 correlations
+             |
+     Dashboard / JSON API
 ```
 
-Keep the toolchain's `bin` directory on the current process PATH if its runtime
-DLLs require it. The build statically links GCC/C++ runtime support where possible.
-Open **http://127.0.0.1:5000**; stop with Ctrl+C. Debug mode is disabled. This uses
-Flask's development server for local demonstration only. If PowerShell policy
-blocks scripts, use an organization-approved execution method; scripts do not
-change execution policy. Missing tools or Flask are reported as setup errors.
+Event fields are `id`, `source`, `severity` (0–10), `failed_logins` (0–1,000,000), and `suspicious_process` (boolean).
 
-## Data and architecture
+```text
+score = min(100, severity*6 + min(failed_logins,10)*2
+                 + (20 if suspicious_process else 0))
+```
 
-`data/events.json` defines four synthetic examples, one per risk class.
-`GET /` displays results; `GET /api/events` returns JSON. There is no upload route.
-Every request reanalyzes the fixtures through both compiled engines.
+LOW = 0–24; MEDIUM = 25–49; HIGH = 50–79; CRITICAL = 80–100. This is a transparent demonstration heuristic, **not** a trained, calibrated threat prediction model.
 
-An event has exactly these fields:
+## APIs in the local development application
 
-| Field | Contract |
-| --- | --- |
-| `id`, `source` | Nonempty printable text, at most 128 characters |
-| `severity` | Integer 0–10 |
-| `failed_logins` | Integer 0–1,000,000 |
-| `suspicious_process` | JSON boolean |
+- `GET /` — Flask dashboard of the synthetic default fixtures
+- `GET /api/events` — legacy event output
+- `GET /api/v2/report` — explanation, risk distribution, and correlation findings
+- `POST /api/v3/analyze` — in-memory batch analysis with 256 KiB request limit and 500-event cap; returns partial validation errors, explained scores, correlation findings and distribution
 
-Python validates the JSON schema before converting numeric fields to the native
-wire format: `severity failed_logins suspicious_flag`, separated by whitespace.
-Both native tools independently reject malformed, extra, nonfinite, fractional,
-or out-of-range input. C emits `VALID` or `INVALID`; C++ emits `score RISK`.
-Subprocesses use a five-second timeout, no shell, and checked output. Engine
-failures surface as HTTP 503. HTML values are escaped by Jinja.
+The **public Docker entrypoint disables all POST operations**, including `/api/v3/analyze`. The interactive ingestion API is meant only for local demo/testing and is not a public production endpoint.
 
-Score = `min(100, severity*6 + min(failed_logins,10)*2 + suspicious_flag*20)`.
-Risk classes: LOW 0–24, MEDIUM 25–49, HIGH 50–79, CRITICAL 80–100. This is an
-illustrative deterministic heuristic, not a calibrated detection model. Scores
-are always even, so tests exercise both sides of the 25 threshold with 24 and 26.
+Example local-only request:
 
-## Development and verification
+```powershell
+$body = '{"events":[{"id":"DEMO-1","source":"synthetic-host","severity":8,"failed_logins":12,"suspicious_process":true}]}'
+Invoke-RestMethod http://127.0.0.1:5000/api/v3/analyze -Method POST -ContentType application/json -Body $body
+```
 
-See `AGENTS.md` for standards. Tests use Python's standard `unittest` framework
-and real compiled binaries, plus failure-injection tests for unavailable engines.
-They cover valid and malformed events, numeric bounds, scoring classes, dashboard
-rendering, JSON output, escaped HTML, timeouts, and invalid native responses.
-Builds enable `-Wall -Wextra -Werror`. Generated binaries and virtual environments
-are ignored by Git. The Windows GitHub Actions workflow builds and tests after
-a future authorized push; this task does not publish or trigger remote CI.
+This produces score **88**, risk **CRITICAL**.
 
-Once Git is available, initialize local version control with `git init` and review
-changes with `git status`. Do not commit dependencies, credentials, or binaries.
+## Scenario fixtures
 
-## Future IBM Bob and Gemini integration
+- `data/demo_scenario_1.json`: three LOW events, no correlations
+- `data/demo_scenario_2.json`: login-failure cluster and CORR-001 (S2-003 score = 50)
+- `data/demo_scenario_3.json`: high-risk cluster triggering CORR-001–006 rule types
 
-Neither IBM Bob nor Gemini is active. IBM Bob could assist reviewed development
-and testing. A future optional Gemini provider could summarize validated events
-for an analyst. Any implementation needs explicit external-access approval,
-redacted or synthetic inputs, secret management, bounded timeouts, auditability,
-and a fallback when unavailable. Model output must never override native
-validation or deterministic scores. There are no SDKs, API keys, or outbound
-requests in this prototype.
+## Tests and validation
+
+```powershell
+.\scripts\build.ps1
+.\scripts\test.ps1
+```
+
+**155 tests passed** on Windows after Sprint 3 merge, including the compiled C/C++ programs. The [Windows GitHub Actions CI](https://github.com/Fatherjay1-bleu/project-omega-central/actions) also passed on commit `d58ed00`. A separate [Linux Docker workflow](.github/workflows/public-demo.yml) tests public scenario routes and rejects POST ingestion (results must be checked on the new PR).
+
+## Changes made during the hackathon
+
+- Sprint 1: hardened parsing, HTTP headers, error handling, reproducible Windows build/test pipeline
+- Sprint 2: explainable score breakdown, bounded batches, correlation rules CORR-001–004, improved dashboard
+- Sprint 3: safeguarded event-ingestion API, correlation rules CORR-005–006, three demo scenarios and expanded tests
+- Deployment: Linux Docker build of original native engines, Gunicorn WSGI server and read-only synthetic-only public demo
+
+## Limitations and roadmap
+
+This is **not a production security product**. It does not ingest actual infrastructure telemetry, authenticate users, train a model, or provide live AI inference. Scoring is deterministic. Future extensions include authenticated/rate-limited telemetry ingestion, production observability, configurable rules, and opt-in AI summaries with privacy controls.
+
+See [PUBLIC_DEPLOYMENT.md](PUBLIC_DEPLOYMENT.md) for the judge-facing demo and [VALIDATION.md](VALIDATION.md) for the original early environment notes (which were superseded by verified later runs).
