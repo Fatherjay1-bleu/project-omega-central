@@ -11,19 +11,97 @@
     table{border-collapse:collapse;width:100%;text-align:left}th,td{padding:18px;border-bottom:1px solid #35445d}
     th{color:#b6c6dd}.LOW{color:#81dfa8}.MEDIUM{color:#ffda80}.HIGH{color:#ffad75}.CRITICAL{color:#ff8798}
     a{color:#95c8ff}footer{margin-top:24px;color:#b6c6dd}
+    /* Summary bar */
+    .summary{display:flex;gap:24px;flex-wrap:wrap;margin-top:30px}
+    .stat{background:#1a2640;border:1px solid #35445d;border-radius:10px;padding:16px 24px;min-width:130px}
+    .stat-label{font-size:12px;color:#b6c6dd;text-transform:uppercase;letter-spacing:.06em}
+    .stat-value{font-size:28px;font-weight:700;margin-top:4px}
+    /* Explanations table extra column */
+    .factors{font-size:13px;color:#b6c6dd;max-width:340px}
+    .factors li{margin-bottom:4px}
+    /* Correlation findings */
+    .findings{margin-top:30px}
+    .finding{background:#1a2640;border:1px solid #35445d;border-radius:10px;padding:16px 20px;margin-top:12px}
+    .finding-header{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+    .badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;background:#243050;color:#95c8ff}
+    .finding-desc{margin-top:8px;color:#b6c6dd;font-size:14px}
+    .finding-ids{margin-top:6px;font-size:12px;color:#7a8fa8}
   </style>
 </head>
 <body><main>
   <p>PROJECT OMEGA CENTRAL</p>
   <h1>SentinelOps AI</h1>
   <p>Synthetic security event analysis · C validation · C++ threat scoring</p>
+
+  <!-- Summary bar -->
+  <div class="summary">
+    <div class="stat">
+      <div class="stat-label">Total events</div>
+      <div class="stat-value">{{ report.total_events }}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Low</div>
+      <div class="stat-value LOW">{{ report.risk_distribution.LOW }}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Medium</div>
+      <div class="stat-value MEDIUM">{{ report.risk_distribution.MEDIUM }}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">High</div>
+      <div class="stat-value HIGH">{{ report.risk_distribution.HIGH }}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Critical</div>
+      <div class="stat-value CRITICAL">{{ report.risk_distribution.CRITICAL }}</div>
+    </div>
+  </div>
+
+  <!-- Event table with explanations -->
   <div class="panel"><table>
-    <thead><tr><th scope="col">Event</th><th scope="col">Source</th><th scope="col">Severity</th><th scope="col">Failed logins</th><th scope="col">Suspicious process</th><th scope="col">Score</th><th scope="col">Risk</th></tr></thead>
+    <thead><tr>
+      <th scope="col">Event</th>
+      <th scope="col">Source</th>
+      <th scope="col">Severity</th>
+      <th scope="col">Failed logins</th>
+      <th scope="col">Suspicious process</th>
+      <th scope="col">Score</th>
+      <th scope="col">Risk</th>
+      <th scope="col">Score explanation</th>
+    </tr></thead>
     <tbody>{% for event in events %}<tr>
-      <td>{{ event.id }}</td><td>{{ event.source }}</td><td>{{ event.severity }}</td>
-      <td>{{ event.failed_logins }}</td><td>{{ 'Yes' if event.suspicious_process else 'No' }}</td>
-      <td>{{ event.score }}/100</td><td class="{{ event.risk }}">{{ event.risk }}</td>
+      <td>{{ event.id }}</td>
+      <td>{{ event.source }}</td>
+      <td>{{ event.severity }}</td>
+      <td>{{ event.failed_logins }}</td>
+      <td>{{ 'Yes' if event.suspicious_process else 'No' }}</td>
+      <td>{{ event.score }}/100</td>
+      <td class="{{ event.risk }}">{{ event.risk }}</td>
+      <td>{% set expl = report.events[loop.index0] %}
+        <ul class="factors">
+          {% for factor in expl.factors %}<li>{{ factor }}</li>{% endfor %}
+        </ul>
+      </td>
     </tr>{% endfor %}</tbody>
   </table></div>
-  <footer>{{ events|length }} synthetic events · <a href="/api/events">View JSON</a> · Reload to reanalyze</footer>
+
+  <!-- Correlation findings -->
+  {% if report.correlations %}
+  <div class="findings">
+    <h2 style="margin-bottom:4px">Correlation findings</h2>
+    <p>Deterministic indicators observed across the event set.</p>
+    {% for finding in report.correlations %}
+    <div class="finding">
+      <div class="finding-header">
+        <span class="badge">{{ finding.rule_id }}</span>
+        <span class="badge">{{ finding.finding_type }}</span>
+      </div>
+      <div class="finding-desc">{{ finding.description }}</div>
+      <div class="finding-ids">Affected events: {{ finding.event_ids | join(', ') }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <footer>{{ events|length }} synthetic events · <a href="/api/events">View JSON</a> · <a href="/api/v2/report">v2 Report JSON</a> · Reload to reanalyze</footer>
 </main></body></html>
