@@ -118,7 +118,7 @@ All 25 new health-check and regression tests pass.
 
 ## Accurate wording for submission
 
-> IBM Bob was used as the software engineering partner for Project Omega Central throughout Sprints 1–3 and for GitHub Issue #5. In Issue #5, Bob explored the codebase, identified that `GET /demo` does not exercise the native C/C++ detection engines, implemented a `GET /health` readiness endpoint in `public_demo.py` that passes a fixed synthetic event through the real validator and scorer, wrote 25 automated tests covering the happy path, engine failure, wrong-result detection, POST rejection, and scenario regressions, updated the Docker smoke test in GitHub Actions, and fixed a test-isolation side effect in `scripts/test.ps1`. Commit SHA and CI run links will be added after the PR is merged.
+> IBM Bob was used as the software engineering partner for Project Omega Central throughout Sprints 1–3 and for GitHub Issue #5. In Issue #5, Bob explored the codebase, identified that `GET /demo` does not exercise the native C/C++ detection engines, implemented a `GET /health` readiness endpoint in `public_demo.py` that passes a fixed synthetic event through the real validator and scorer, wrote 25 automated tests covering the happy path, engine failure, wrong-result detection, POST rejection, and scenario regressions, updated the Docker smoke test in GitHub Actions, and fixed a test-isolation side effect in `scripts/test.ps1`. The Issue #5 implementation is in [PR #7](https://github.com/Fatherjay1-bleu/project-omega-central/pull/7), merged to main at commit `7f07fefcf5c88e211ac0993f4da150cc4004f36d`. The [Windows CI run](https://github.com/Fatherjay1-bleu/project-omega-central/actions/runs/39087733167) and [Docker smoke test run](https://github.com/Fatherjay1-bleu/project-omega-central/actions/runs/39087733222) both passed for the Bob implementation commit. Railway deployed merge commit successfully.
 
 ---
 
@@ -129,7 +129,16 @@ All 25 new health-check and regression tests pass.
 - [x] IBM Bob wrote `tests/test_public_demo.py` and ran it locally: 25/25 pass.
 - [x] IBM Bob updated `.github/workflows/public-demo.yml`.
 - [x] IBM Bob updated `scripts/test.ps1` with correct isolation fix.
-- [ ] PR opened on `feature/bob-native-healthcheck` — add PR link here.
-- [ ] CI run link (Windows `ci.yml` + `public-demo.yml`) — add after push.
-- [ ] Railway healthcheck updated from `/demo` to `/health` — after CI passes.
+- [x] PR #7 merged: https://github.com/Fatherjay1-bleu/project-omega-central/pull/7
+- [x] Windows CI passed: https://github.com/Fatherjay1-bleu/project-omega-central/actions/runs/39087733167 ; Docker smoke test passed: https://github.com/Fatherjay1-bleu/project-omega-central/actions/runs/39087733222
+- [x] Railway production service configuration changed from `/demo` to `/health` on October 17, 2026 (ET). The merged application deployment reported SUCCESS. A fresh healthcheck-config-triggered deployment, if required by Railway, should be confirmed separately.
 - [ ] Screen recording or screenshots captured for hackathon pitch.
+
+
+## Integration record — added by ChatGPT after IBM Bob implementation
+
+- Bob implementation head: `4c2cb6aceec4649eca32bde4ec5cfcd9b0294dc0`.
+- [PR #7](https://github.com/Fatherjay1-bleu/project-omega-central/pull/7) merged; main merge commit: `7f07fefcf5c88e211ac0993f4da150cc4004f36d`.
+- Automated tests for the Bob branch implementation: [Windows CI — success](https://github.com/Fatherjay1-bleu/project-omega-central/actions/runs/39087733167), [Docker public demo — success](https://github.com/Fatherjay1-bleu/project-omega-central/actions/runs/39087733222).
+- Railway deployment `34181239-167b-48f0-996c-7d063be327bc` reported SUCCESS on merged commit, and `/health` is configured as the new production service healthcheck path.
+- This integration record was added by ChatGPT and does not claim that IBM Bob performed the merge or Railway configuration.
