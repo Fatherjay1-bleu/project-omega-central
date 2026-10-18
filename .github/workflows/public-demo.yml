@@ -1,4 +1,4 @@
-name: Public Docker demo build and smoke test
+﻿name: Public Docker demo build and smoke test
 on:
   push:
     paths:
@@ -26,7 +26,7 @@ jobs:
       - name: Start public read-only service
         run: |
           docker run -d --name omega-demo -p 18080:8080 sentinelops-hackathon-demo
-      - name: Verify dashboard, scenario data, and read-only HTTP behavior
+      - name: Verify dashboard, scenario data, read-only HTTP behavior, and health endpoint
         run: |
           python3 - <<'PY'
           import json, time, urllib.request, urllib.error
@@ -67,8 +67,22 @@ jobs:
               raise AssertionError("POST unexpectedly succeeded")
           except urllib.error.HTTPError as err:
               assert err.code == 405, err.code
-          print("Public read-only Docker smoke checks passed")
+          # --- Native-engine health check (IBM Bob, issue #5) ---
+          with urllib.request.urlopen(base + "/health", timeout=10) as response:
+              assert response.status == 200, f"/health returned {response.status}"
+              health = json.load(response)
+          assert health["status"] == "ok",          f"unexpected status: {health}"
+          assert health["engine"] == "native-c-cpp", f"unexpected engine: {health}"
+          assert health["synthetic"] is True,        f"synthetic not true: {health}"
+          req_post = urllib.request.Request(base + "/health", data=b"", method="POST")
+          try:
+              urllib.request.urlopen(req_post, timeout=5)
+              raise AssertionError("POST /health unexpectedly succeeded")
+          except urllib.error.HTTPError as err:
+              assert err.code == 405, f"expected 405 for POST /health, got {err.code}"
+          print("Public read-only Docker smoke checks passed (including /health)")
           PY
       - name: Container logs
         if: failure()
         run: docker logs omega-demo
+
