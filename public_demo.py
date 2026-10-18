@@ -12,6 +12,23 @@ from werkzeug.exceptions import MethodNotAllowed
 
 from app import app as application, _build_report
 from sentinel.batch import analyze_batch
+from sentinel.orchestrator import EngineError, analyze_event
+
+# ---------------------------------------------------------------------------
+# Fixed synthetic probe event for the native-engine health check.
+# Chosen so the expected score is unambiguous:
+#   severity=1 → 1*6=6, failed_logins=0 → 0, suspicious_process=False → 0
+#   score = 6, risk = LOW
+# ---------------------------------------------------------------------------
+_HEALTH_PROBE = {
+    "id":                "HEALTH-PROBE",
+    "source":            "healthcheck",
+    "severity":          1,
+    "failed_logins":     0,
+    "suspicious_process": False,
+}
+_HEALTH_EXPECTED_SCORE = 6
+_HEALTH_EXPECTED_RISK  = "LOW"
 
 SCENARIOS = {
     1: ("Normal activity", "Low-risk events with no correlation findings."),
@@ -61,6 +78,27 @@ def demo_scenario(number):
     )
 
 
+@application.get("/health")
+def health():
+    """Native-engine readiness check.
+
+    Passes a fixed synthetic probe event through the real C validator and C++
+    scorer.  Returns 200 when both engines accept the probe and produce the
+    expected score.  Returns 503 when either engine is unavailable, times out,
+    or returns unexpected output.
+
+    No external input is accepted.  No internal details, paths, or diagnostics
+    are included in any response.
+    """
+    try:
+        result = analyze_event(_HEALTH_PROBE)
+        if result["score"] != _HEALTH_EXPECTED_SCORE or result["risk"] != _HEALTH_EXPECTED_RISK:
+            raise EngineError("Native engine returned an unexpected result for the health probe.")
+    except EngineError:
+        return jsonify(status="unavailable"), 503
+    return jsonify(status="ok", engine="native-c-cpp", synthetic=True), 200
+
+
 # Reuse the app's existing '/' route while presenting the interactive console
 # only in the public demo. Local development routes and unit tests stay intact.
 def interactive_console():
@@ -68,3 +106,4 @@ def interactive_console():
 
 
 application.view_functions["dashboard"] = interactive_console
+
