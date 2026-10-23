@@ -1,0 +1,22 @@
+name: omega-central-demo
+region: nyc
+services:
+  - name: sentinelops-demo
+    github:
+      repo: Fatherjay1-bleu/project-omega-central
+      branch: main
+      deploy_on_push: false
+    dockerfile_path: Dockerfile
+    source_dir: /
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 30
+      period_seconds: 20
+      timeout_seconds: 10
+      success_threshold: 1
+      failure_threshold: 3
