@@ -1,6 +1,7 @@
 ﻿name: Public Docker demo build and smoke test
 on:
   push:
+    branches: [main]
     paths:
       - "Dockerfile"
       - ".dockerignore"
@@ -14,6 +15,9 @@ on:
       - ".github/workflows/public-demo.yml"
   pull_request:
   workflow_dispatch:
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
