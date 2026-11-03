@@ -1,0 +1,46 @@
+"""Staging-only authorization primitives. Never construct principals from unverified HTTP/JWT data."""
+from dataclasses import dataclass
+from enum import Enum
+import hmac
+
+class AuthorizationDenied(PermissionError):
+    """Missing, invalid, or cross-tenant authorization."""
+
+class Action(str, Enum):
+    READ = "read"
+    INGEST = "ingest"
+    MANAGE = "manage"
+
+ROLE_GRANTS = {
+    "viewer": frozenset({Action.READ}),
+    "analyst": frozenset({Action.READ, Action.INGEST}),
+    "admin": frozenset({Action.READ, Action.INGEST, Action.MANAGE}),
+}
+
+@dataclass(frozen=True)
+class VerifiedPrincipal:
+    subject: str
+    tenant_id: str
+    role: str
+    issuer: str
+
+    def __post_init__(self):
+        if any(type(value) is not str or not value or len(value) > 256 or value.strip() != value
+               for value in (self.subject, self.tenant_id, self.role, self.issuer)):
+            raise ValueError("invalid verified principal")
+
+def require_tenant_grant(principal, resource_tenant_id, action, *, trusted_issuer):
+    """Fail closed; caller must authenticate the principal independently."""
+    if type(principal) is not VerifiedPrincipal:
+        raise AuthorizationDenied("verified identity required")
+    if type(trusted_issuer) is not str or not trusted_issuer:
+        raise AuthorizationDenied("trusted issuer required")
+    if not hmac.compare_digest(principal.issuer, trusted_issuer):
+        raise AuthorizationDenied("untrusted issuer")
+    if type(resource_tenant_id) is not str or not resource_tenant_id:
+        raise AuthorizationDenied("resource tenant required")
+    if not hmac.compare_digest(principal.tenant_id, resource_tenant_id):
+        raise AuthorizationDenied("cross-tenant access denied")
+    if type(action) is not Action or action not in ROLE_GRANTS.get(principal.role, ()):
+        raise AuthorizationDenied("grant denied")
+    return True
