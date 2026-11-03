@@ -1,12 +1,12 @@
 """Isolated enterprise authorization tests; no live data or network."""
 import unittest
-from sentinel.enterprise.tenant_policy import Action, AuthorizationDenied, VerifiedPrincipal, require_tenant_grant
+from sentinel.enterprise.tenant_policy import Action, AuthorizationDenied, VerifiedPrincipal, _mint_verified_principal, require_tenant_grant
 
 ISSUER = "https://identity.example.test"
 
 class TenantPolicyTests(unittest.TestCase):
     def principal(self, tenant="tenant-a", role="viewer", issuer=ISSUER):
-        return VerifiedPrincipal("subject-1", tenant, role, issuer)
+        return _mint_verified_principal("subject-1", tenant, role, issuer)
 
     def check(self, principal, tenant="tenant-a", action=Action.READ, issuer=ISSUER):
         return require_tenant_grant(principal, tenant, action, trusted_issuer=issuer)
