@@ -42,11 +42,11 @@ def require_tenant_grant(principal, resource_tenant_id, action, *, trusted_issue
         raise AuthorizationDenied("trusted identity provenance required")
     if type(trusted_issuer) is not str or not trusted_issuer:
         raise AuthorizationDenied("trusted issuer required")
-    if not hmac.compare_digest(principal.issuer, trusted_issuer):
+    if not hmac.compare_digest(principal.issuer.encode("utf-8"), trusted_issuer.encode("utf-8")):
         raise AuthorizationDenied("untrusted issuer")
     if type(resource_tenant_id) is not str or not resource_tenant_id:
         raise AuthorizationDenied("resource tenant required")
-    if not hmac.compare_digest(principal.tenant_id, resource_tenant_id):
+    if not hmac.compare_digest(principal.tenant_id.encode("utf-8"), resource_tenant_id.encode("utf-8")):
         raise AuthorizationDenied("cross-tenant access denied")
     if type(action) is not Action or action not in ROLE_GRANTS.get(principal.role, ()):
         raise AuthorizationDenied("grant denied")
