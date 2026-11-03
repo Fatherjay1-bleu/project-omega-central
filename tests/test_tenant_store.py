@@ -3,7 +3,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
-from sentinel.enterprise.tenant_policy import VerifiedPrincipal, AuthorizationDenied
+from sentinel.enterprise.tenant_policy import VerifiedPrincipal, _mint_verified_principal, AuthorizationDenied
 from sentinel.enterprise.tenant_store import TenantEventStore
 
 ISSUER = "https://identity.example.test"
@@ -14,9 +14,9 @@ class TenantStoreTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.store = TenantEventStore(Path(self.temp.name) / "events.sqlite", trusted_issuer=ISSUER)
         self.store.initialize()
-        self.analyst = VerifiedPrincipal("user-a", "tenant-a", "analyst", ISSUER)
-        self.viewer = VerifiedPrincipal("viewer-a", "tenant-a", "viewer", ISSUER)
-        self.other = VerifiedPrincipal("user-b", "tenant-b", "admin", ISSUER)
+        self.analyst = _mint_verified_principal("user-a", "tenant-a", "analyst", ISSUER)
+        self.viewer = _mint_verified_principal("viewer-a", "tenant-a", "viewer", ISSUER)
+        self.other = _mint_verified_principal("user-b", "tenant-b", "admin", ISSUER)
 
     def test_own_tenant_roundtrip(self):
         self.store.put(self.analyst, "tenant-a", "evt-1", {"severity": 7})
@@ -43,7 +43,7 @@ class TenantStoreTests(unittest.TestCase):
 
     def test_unverified_identity_and_wrong_issuer_denied(self):
         for p in (None, {"tenant_id": "tenant-a"},
-                  VerifiedPrincipal("x", "tenant-a", "admin", "https://evil.test")):
+                  _mint_verified_principal("x", "tenant-a", "admin", "https://evil.test")):
             with self.subTest(principal=p), self.assertRaises(AuthorizationDenied):
                 self.store.get(p, "tenant-a", "evt-1")
 
