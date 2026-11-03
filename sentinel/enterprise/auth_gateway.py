@@ -1,11 +1,5 @@
-"""Staging-only authenticated gateway. A real OIDC verifier is NOT supplied here.
-
-The trusted verifier must validate signature, algorithm allowlist, issuer,
-audience, expiry, token type, and key rotation before returning claims.
-Roles/membership must be resolved from trusted server-side authorization data.
-This module is not wired into the public demo.
-"""
-from .tenant_policy import AuthorizationDenied, VerifiedPrincipal
+"""Staging-only gateway. Requires an independently trusted OIDC verifier and membership source."""
+from .tenant_policy import AuthorizationDenied, _mint_verified_principal
 
 class EnterpriseAuthGateway:
     def __init__(self, *, token_verifier, membership_resolver, trusted_issuer):
@@ -32,8 +26,8 @@ class EnterpriseAuthGateway:
             if type(subject) is not str or not subject or len(subject) > 256:
                 raise AuthorizationDenied("invalid subject")
             role = self._membership(subject, tenant_id)
-            if role not in ("viewer", "analyst", "admin") or type(role) is not str:
+            if type(role) is not str or role not in ("viewer", "analyst", "admin"):
                 raise AuthorizationDenied("membership not granted")
-            return VerifiedPrincipal(subject, tenant_id, role, self._issuer)
+            return _mint_verified_principal(subject, tenant_id, role, self._issuer)
         except Exception as exc:
             raise AuthorizationDenied("authentication denied") from exc
