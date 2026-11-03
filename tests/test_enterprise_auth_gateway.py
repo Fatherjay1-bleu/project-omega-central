@@ -14,7 +14,7 @@ class GatewayTests(unittest.TestCase):
 
     def test_trusted_adapters_return_scoped_principal(self):
         p = self.gateway().authenticate("opaque-token", "a")
-        self.assertEqual(p, VerifiedPrincipal("alice", "a", "analyst", ISSUER))
+        self.assertEqual((p.subject, p.tenant_id, p.role, p.issuer), ("alice", "a", "analyst", ISSUER))
 
     def test_cross_tenant_membership_denied(self):
         with self.assertRaises(AuthorizationDenied):
