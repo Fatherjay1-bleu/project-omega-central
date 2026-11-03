@@ -1,0 +1,33 @@
+name: Enterprise staging security tests
+on:
+  push:
+    branches:
+      - feature/enterprise-foundation-20261103
+  pull_request:
+    paths:
+      - 'sentinel/enterprise/**'
+      - 'tests/test_tenant*.py'
+      - 'tests/test_enterprise*.py'
+      - 'tests/test_principal_provenance_security.py'
+      - '.github/workflows/enterprise-staging-tests.yml'
+permissions:
+  contents: read
+jobs:
+  enterprise-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Tenant authorization and store
+        run: python -m unittest discover -s tests -p 'test_tenant*.py' -v
+      - name: Authentication and integration
+        run: python -m unittest discover -s tests -p 'test_enterprise*.py' -v
+      - name: Principal forgery regression
+        run: python -m unittest discover -s tests -p 'test_principal_provenance_security.py' -v
