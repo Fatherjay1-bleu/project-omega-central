@@ -40,6 +40,14 @@ class TenantPolicyTests(unittest.TestCase):
         with self.assertRaises(AuthorizationDenied):
             self.check(self.principal(issuer="https://attacker.test"))
 
+    def test_unicode_tenant_and_issuer_fail_closed(self):
+        principal = self.principal(tenant="équipe", issuer="https://idéntité.example.test")
+        self.assertTrue(self.check(principal, "équipe", issuer="https://idéntité.example.test"))
+        with self.assertRaises(AuthorizationDenied):
+            self.check(principal, "autre", issuer="https://idéntité.example.test")
+        with self.assertRaises(AuthorizationDenied):
+            self.check(principal, "équipe", issuer="https://other.example.test")
+
     def test_untyped_action_denied(self):
         with self.assertRaises(AuthorizationDenied):
             self.check(self.principal(), action="read")
