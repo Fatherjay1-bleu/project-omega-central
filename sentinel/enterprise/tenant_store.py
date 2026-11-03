@@ -1,6 +1,7 @@
 """Isolated staging tenant event storage; not a production datastore."""
 import json
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from .tenant_policy import Action, require_tenant_grant
 
@@ -14,7 +15,7 @@ class TenantEventStore:
         self.trusted_issuer = trusted_issuer
 
     def initialize(self):
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("""CREATE TABLE IF NOT EXISTS tenant_events (
                 tenant_id TEXT NOT NULL, event_id TEXT NOT NULL,
                 payload TEXT NOT NULL, PRIMARY KEY (tenant_id, event_id))""")
@@ -28,7 +29,7 @@ class TenantEventStore:
         encoded = json.dumps(payload, allow_nan=False, separators=(",", ":"), sort_keys=True)
         if len(encoded.encode("utf-8")) > MAX_PAYLOAD_BYTES:
             raise ValueError("payload too large")
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("INSERT INTO tenant_events (tenant_id,event_id,payload) VALUES (?,?,?)",
                        (tenant_id,event_id,encoded))
 
@@ -36,7 +37,7 @@ class TenantEventStore:
         require_tenant_grant(principal, tenant_id, Action.READ, trusted_issuer=self.trusted_issuer)
         if type(event_id) is not str or not 1 <= len(event_id) <= 128:
             raise ValueError("invalid event id")
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             row = db.execute("SELECT payload FROM tenant_events WHERE tenant_id=? AND event_id=?",
                              (tenant_id,event_id)).fetchone()
         return json.loads(row[0]) if row else None
