@@ -31,3 +31,7 @@ jobs:
       - name: Test
         shell: msys2 {0}
         run: powershell.exe -NoProfile -File scripts/test.ps1
+
+      - name: Public demo security regression contracts
+        shell: pwsh
+        run: python -m unittest discover -s tests -p 'test_public_demo_security_contract.py' -v
