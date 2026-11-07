@@ -41,6 +41,14 @@ class NativeHealthFailClosedTests(unittest.TestCase):
         })
         self.assertEqual(probe.call_count, 1)
 
+    def test_malformed_native_result_returns_sanitized_503(self):
+        for invalid in ({}, {"score": 6}, {"risk": "LOW"}, None, ["invalid"]):
+            with self.subTest(invalid=invalid):
+                with patch("public_demo.analyze_event", return_value=invalid):
+                    response = self.client.get("/health")
+                self.assertEqual(response.status_code, 503)
+                self.assertEqual(response.get_json(), {"status": "unavailable"})
+
     def test_mutating_health_request_is_rejected_without_engine_execution(self):
         with patch("public_demo.analyze_event") as probe:
             response = self.client.post("/health", json={"severity": 9})
