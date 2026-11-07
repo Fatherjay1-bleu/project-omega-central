@@ -92,7 +92,9 @@ def health():
     """
     try:
         result = analyze_event(_HEALTH_PROBE)
-        if result["score"] != _HEALTH_EXPECTED_SCORE or result["risk"] != _HEALTH_EXPECTED_RISK:
+        if (not isinstance(result, dict) or
+                result.get("score") != _HEALTH_EXPECTED_SCORE or
+                result.get("risk") != _HEALTH_EXPECTED_RISK):
             raise EngineError("Native engine returned an unexpected result for the health probe.")
     except EngineError:
         return jsonify(status="unavailable"), 503
