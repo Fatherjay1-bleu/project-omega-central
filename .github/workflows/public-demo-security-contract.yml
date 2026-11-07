@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - "tests/test_public_demo_security_contract.py"
+      - "tests/test_health_failclosed_contract.py"
       - "public_demo.py"
       - "app.py"
       - ".github/workflows/public-demo-security-contract.yml"
@@ -19,5 +20,7 @@ jobs:
           python-version: "3.12"
       - name: Install runtime dependencies
         run: python -m pip install -r requirements.txt
-      - name: Explicitly run public demo security regression tests
+      - name: Run public demo security regression tests
         run: python -m unittest discover -s tests -p 'test_public_demo_security_contract.py' -v
+      - name: Run native health fail-closed regression tests
+        run: python -m unittest discover -s tests -p 'test_health_failclosed_contract.py' -v
